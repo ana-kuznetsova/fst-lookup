@@ -10,10 +10,10 @@ using namespace std;
 class Triplet{
     public:
         string letter;
-        string target;
+        int target;
         float weight;
 
-    Triplet(string letter, string target, float weight){
+    Triplet(string letter, int target, float weight){
         letter = letter;
         target = target;
         weight = weight;
@@ -27,7 +27,7 @@ class State{
         map <string, vector<Triplet>> transitionsin; 
         map <string, vector<Triplet>> transitionsout;
 
-    void add_transition(string target, string input, string output, float weight){
+    void add_transition(int target, string input, string output, float weight){
         if (transitionsin.find(input) == transitionsin.end()){
             vector<Triplet> triplets;
             transitionsin[input]= triplets;            
@@ -80,26 +80,54 @@ class ATTFST{
     ATTFST(char* filename, string epsilon_symbol, string identity_symbol, string unknown_symbol){
         epsilon_symbol = epsilon_symbol;
         identity_symbol = identity_symbol;
-        unknown_symbol = unknown_symbol;
-        
+        unknown_symbol = unknown_symbol;        
         //read lines from att file
         vector<string> lines = read_lines(filename);
 
-        for(auto i = lines.begin(); i<lines.end(); i++){
-            cout << *i << endl;
+        for(auto line_ptr = lines.begin(); line_ptr<lines.end(); line_ptr++){
+            vector<string> fields = split_string(*line_ptr);
+            if(fields.size() > 3){
+                int source = stoi(fields[0]);
+                int target = stoi(fields[1]);
+                string insym = map_syms(fields[2]);
+                string outsym = map_syms(fields[3]);
+                float weight = 0.0;
+                if(fields.size() > 4){
+                    weight = stof(fields[4]);
+                }
+                alphabet.insert(insym);
+                alphabet.insert(outsym);
+                if(states.find(source)==states.end()){
+                    State nss = State();
+                    states[source] = nss;
+                }
+                if(states.find(target)==states.end()){
+                    State nst = State();
+                    states[target] = nst;
+                }
+                states[source].add_transition(target, insym, outsym, weight);
+            } else if(fields.size() < 3 && fields.size() > 0){
+                int final = stoi(fields[0]);
+                float finalweight = 0.0;
+                if(fields.size() > 1){
+                    finalweight = stof(fields[1]);
+                }
+                if(states.find(final) == states.end()){
+                    State nss = State();
+                    states[final] = nss;
+                }
+                states[final].set_final(finalweight);
+            }
         }
     }
 
     vector<string> read_lines(char* filename){
         char *cvalue = NULL;
         int c;
-
         FILE *f = fopen(filename, "r");		
         c = fgetc(f); // get one character from the input
-
         vector<string> lines;
         string line;
-
         while(c != EOF){	
         if((char)c !='\n'){ 
             line+=(char) c;
@@ -119,6 +147,19 @@ class ATTFST{
         return s;
     }
 
+    //split string by tab
+    vector<string> split_string(string s){
+        vector<string> tokens;
+        string delimiter = "\t";
+        size_t pos = 0;
+        string token;
+        while ((pos = s.find(delimiter)) != string::npos){
+            token = s.substr(0, pos);
+            tokens.push_back(token);
+            s.erase(0, pos + delimiter.length());
+        }
+        return tokens;   
+    }
 };
 
 
