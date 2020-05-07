@@ -160,6 +160,32 @@ class ATTFST{
         }
         return tokens;   
     }
+
+    string splice(string word, int i, int j){
+        string sp_word;
+        for(int it = i; it < j; it++){
+            sp_word.push_back(word.at(it));
+        }
+        return sp_word;
+    }
+
+    vector<string> tokenize(string word){
+        vector<string> tokens;
+        int start = 0;
+        while(start < word.size()){
+            string t;
+            t.push_back(word.at(start));
+            for (int l = 1; l <= word.size() - start; l++){
+                string sp_word = splice(word, start, start + l);
+                if(alphabet.find(sp_word) != alphabet.end()){
+                    t = sp_word;
+                } 
+            tokens.push_back(t);
+            start += t.size();
+            }
+        }
+        return tokens;
+    } 
 };
 
 
