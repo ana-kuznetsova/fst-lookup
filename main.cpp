@@ -4,6 +4,8 @@
 #include <set> 
 #include <vector>
 #include <map>
+#include<algorithm>
+#include <thread>
 
 using namespace std;
 
@@ -18,6 +20,32 @@ class Triplet{
         target = target;
         weight = weight;
     }
+};
+
+class heapStruct{
+    public:
+        float cost;
+        int pos;
+        vector<string> output;
+        int state; 
+        bool final_included;
+
+    heapStruct(float cost, int pos, vector<string> output, int state, bool final_included){
+        cost = cost;
+        pos = pos;
+        output = output;
+        state = state;
+        final_included = final_included;
+    }
+};
+
+struct comparator{
+  bool operator()(heapStruct const& a, heapStruct const& b) const{
+    if(a.cost == b.cost){
+        return a.pos > b.pos;
+    }
+    return a.cost > b.cost;
+  }
 };
 
 class State{
@@ -186,6 +214,72 @@ class ATTFST{
         }
         return tokens;
     } 
+
+    heapStruct pop(vector<heapStruct> heap){
+        pop_heap(heap.begin(), heap.end(), comparator());
+        heapStruct pop_value = heap.back();
+        heap.pop_back();
+        return pop_value;
+    }
+
+    void push(float cost, float weight, int negpos, string outsym, int target, bool flag, vector<string> output, vector<heapStruct> heap){
+        vector<string> out = output;
+        if (outsym.size()){
+            out.push_back(outsym);
+        }
+        heapStruct h = heapStruct(cost + weight, negpos, out, target, flag);
+        heap.push_back(h);
+        push_heap(heap.begin(), heap.end(), comparator());
+    }
+
+
+    void yield(vector<string> output, float cost, bool return_joined){
+        if(return_joined){
+            string out = "";
+            for(int i = 0; i <= output.size(); i++){
+                out += output.at(i); 
+            }
+            cout << out << "," << cost << endl;
+        } else {
+            for(int i = 0; i <= output.size(); i++){
+                cout << output.at(i) << ","; 
+            }
+            cout << cost << endl;
+        }
+    }
+
+    void apply(string word, string dir, bool return_joined){
+        vector<string> w = tokenize(word);
+        vector<heapStruct> heap;
+        vector<string> empty;
+        heapStruct def = heapStruct(0.0, 0, empty, 0, false);
+        heap.push_back(def);
+        make_heap(heap.begin(), heap.end(), comparator());
+
+        while(heap.size()){
+            heapStruct val = pop(heap);
+            float cost = val.cost;
+            int negpos = val.pos;
+            vector<string> output = val.output;
+            int state = val.state;
+            bool final_included = val.final_included;
+
+            if(final_included){
+                yield(output, cost, return_joined);
+            } else {
+                if(-negpos == w.size()){
+                    if(states[state].final){
+                        push(cost, states[state].finalweight, negpos, "", state, true, output, heap);
+                    } else {
+                        vector<Triplet> t = states[state].get_transitions("", dir);
+                        for(int i = 0; i <= t.size(); i++){
+                            push(cost, t[i].weight, negpos, t[i].letter, t[i].target, false, output, heap);   
+                        }
+                    }
+                }
+            }
+        }
+    }
 };
 
 
