@@ -276,6 +276,34 @@ class ATTFST{
                             push(cost, t[i].weight, negpos, t[i].letter, t[i].target, false, output, heap);   
                         }
                     }
+                } else {
+                    vector<string> nextsym;
+                    nextsym.push_back(w[-negpos]);
+                    if(alphabet.find(w[-negpos]) == alphabet.end()){
+                        vector<string> sym;
+                        sym.push_back(unknown_symbol);
+                        sym.push_back(identity_symbol);
+                        nextsym = sym;
+                    }
+                    for (int i = 0; i <= nextsym.size(); i++){
+                        vector<Triplet> t = states[state].get_transitions(nextsym[i], dir);
+                        for(int i = 0; i <= t.size(); i++){
+                            string outsym;
+                            if(t[i].letter == identity_symbol){
+                                outsym = w[-negpos];
+                            } else if(t[i].letter == identity_symbol){
+                                outsym = "?";
+                            } else {
+                                outsym = t[i].letter;
+                            }
+                            push(cost, t[i].weight, negpos - 1, outsym, t[i].target, false, output, heap);   
+                        }
+
+                        t = states[state].get_transitions("", dir);
+                        for(int i = 0; i <= t.size(); i++){
+                            push(cost, t[i].weight, negpos, t[i].letter, t[i].target, false, output, heap);
+                        }
+                    }
                 }
             }
         }
